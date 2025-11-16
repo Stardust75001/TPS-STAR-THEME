@@ -54,7 +54,7 @@
         "logo_svg": "",
         "logo_svg_height_mobile": 140,
         "logo_svg_height_desktop": 200,
-        "logo": "shopify:\/\/shop_images\/ENSIGNE_2.jpg",
+        "logo": "shopify://shop_images/ENSIGNE_2.jpg",
         "logo_height_mobile": 96,
         "logo_height_desktop": 200,
         "menu_desktop": "main-menu",
@@ -79,8 +79,17 @@
     },
     "stories-bar-sticky-dynamic": {
       "type": "stories-bar-sticky-dynamic",
-      "settings": { "icon_size": "90", "tooltip_bg": "#0F6378", "tooltip_opacity": 1 }
+      "settings": {
+        "icon_size": "90",
+        "tooltip_bg": "#0F6378",
+        "tooltip_opacity": 1
+      }
     }
   },
-  "order": ["announcement-bar", "discount_bar_yPnbYM", "navbar", "stories-bar-sticky-dynamic"]
+  "order": [
+    "announcement-bar",
+    "discount_bar_yPnbYM",
+    "navbar",
+    "stories-bar-sticky-dynamic"
+  ]
 }
