@@ -9,6 +9,8 @@ function handleProductOptionChange(e) {
   const productId = e.target.dataset.productId;
   const selectedOptions = [];
 
+  if (!window.productVariants || !window.productVariants[productId]) return;
+
   form.querySelectorAll(`.product-option[name^="option-"]`).forEach(el => {
     if (el.tagName === 'SELECT' || el.checked) {
       selectedOptions.push(el.value);
@@ -21,29 +23,26 @@ function handleProductOptionChange(e) {
   );
 
   if (matchedVariant) {
-    // ✅ MAJ prix
-    const priceEl = document.querySelector(`.product-price[data-product-id="${productId}"]`);
+    const priceEl = form.querySelector(`.product-price[data-product-id="${productId}"]`);
     if (priceEl) {
-      priceEl.textContent = Shopify.formatMoney(matchedVariant.price, '{{ shop.money_format }}');
+      priceEl.textContent = Shopify.formatMoney(matchedVariant.price, window.money_format);
     }
 
-    // ✅ MAJ image
-    const imageEl = document.querySelector(`.product-image[data-product-id="${productId}"]`);
+    const imageEl = form.querySelector(`.product-image[data-product-id="${productId}"]`);
     if (imageEl && matchedVariant.featured_image) {
       imageEl.src = matchedVariant.featured_image;
     }
 
-    // ✅ MAJ input hidden ID
-    const variantInput = document.querySelector(`input[name="id"][data-product-id="${productId}"]`);
+    const variantInput = form.querySelector(`input[name="id"][data-product-id="${productId}"]`);
     if (variantInput) {
       variantInput.value = matchedVariant.id;
     }
 
-    // ✅ MAJ bouton ATC
-    const atcBtn = document.querySelector(`#add-to-cart-${productId}`);
+    const atcBtn = form.querySelector(`#add-to-cart-${productId}`);
     if (atcBtn) {
       atcBtn.disabled = !matchedVariant.available;
-      atcBtn.innerText = matchedVariant.available ? 'Ajouter au panier' : 'Indisponible';
+      atcBtn.textContent = matchedVariant.available ? 'Ajouter au panier' : 'Indisponible';
+      atcBtn.setAttribute('aria-disabled', !matchedVariant.available);
     }
   }
 }

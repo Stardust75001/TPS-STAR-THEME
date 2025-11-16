@@ -2,12 +2,7 @@
   <!-- Image principale -->
   <div style="flex: 1 1 40%; max-width: 500px;">
     {% if product.featured_image %}
-      <img
-        src="{{ product.featured_image | image_url: width: 800 }}"
-        alt="{{ product.title | escape }}"
-        style="width: 100%; border: 1px solid #ddd; padding: 10px;"
-        loading="lazy"
-      >
+      <img src="{{ product.featured_image | image_url: width: 800 }}" alt="{{ product.title | escape }}" style="width: 100%; border: 1px solid #ddd; padding: 10px;" loading="lazy">
     {% endif %}
   </div>
 
@@ -42,51 +37,9 @@
         </select>
       {% endif %}
 
-      <button
-        type="submit"
-        style="background-color: #FFA41C; color: black; border: none; padding: 12px 24px; font-weight: bold; font-size: 16px; cursor: pointer;"
-      >
+      <button type="submit" style="background-color: #FFA41C; color: black; border: none; padding: 12px 24px; font-weight: bold; font-size: 16px; cursor: pointer;">
         Ajouter au panier
       </button>
     </form>
   </div>
 </div>
-
-<!-- filepath: sections/product-*.liquid -->
-<script>
-window.dataLayer = window.dataLayer || [];
-window.dataLayer.push({
-  event: "view_item",
-  ecommerce: {
-    items: [{
-      item_id: "{{ product.selected_or_first_available_variant.id }}",
-      item_name: "{{ product.title | escape }}",
-      item_brand: "{{ product.vendor }}",
-      item_category: "{{ product.type }}",
-      price: {{ product.price | money_without_currency | replace: ',', '.' }},
-      currency: "{{ shop.currency }}"
-    }]
-  }
-});
-</script>
-
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-  const btn = document.querySelector('[name="add"], .btn.btn-primary');
-  if (!btn) return;
-
-  btn.addEventListener("click", function() {
-    window.dataLayer.push({
-      event: "add_to_cart",
-      ecommerce: {
-        items: [{
-          item_id: "{{ product.selected_or_first_available_variant.id }}",
-          item_name: "{{ product.title | escape }}",
-          price: {{ product.selected_or_first_available_variant.price | money_without_currency | replace: ',', '.' }},
-          quantity: 1
-        }]
-      }
-    });
-  });
-});
-</script>

@@ -1,77 +1,53 @@
 {% comment %}
-  Section produit simple pour test
+Section produit simple pour test
 {% endcomment %}
 
-<div class="product-page-simple">
+<div class="product-page-simple py-5">
   <div class="container">
-    <div class="row">
+    <div class="row align-items-start">
       <div class="col-md-6">
         {% if product.images.size > 0 %}
           <img
             src="{{ product.featured_image | img_url: 'master' }}"
-            alt="{{ product.title }}"
-            class="img-fluid"
-          >
+            alt="{{ product.title | escape }}"
+            class="img-fluid w-100"
+            loading="lazy">
         {% else %}
-          {{ 'product-1' | placeholder_svg_tag: 'placeholder-svg' }}
+          {{ 'product-1' | placeholder_svg_tag: 'placeholder-svg w-100' }}
         {% endif %}
       </div>
+
       <div class="col-md-6">
-        <h1>{{ product.title }}</h1>
-        <p class="price">{{ product.price | money }}</p>
-        <div class="description">{{ product.description }}</div>
+        <h1 class="h2 mb-3">{{ product.title }}</h1>
+        <p class="price h4 mb-3">{{ product.price | money }}</p>
+        <div class="description mb-4">{{ product.description }}</div>
 
         {% form 'product', product %}
-          <input
-            type="hidden"
-            name="id"
-            value="{{ product.selected_or_first_available_variant.id }}"
-          >
-          <button type="submit" class="btn btn-primary">Ajouter au panier</button>
+          <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
+
+          <button type="submit" class="btn btn-primary mb-3">
+            {{ 'products.product.add_to_cart' | t }}
+          </button>
         {% endform %}
+
+        <!-- ✅ Bouton wishlist (Option 1) -->
+        <button
+          class="btn btn-outline-secondary"
+          data-wishlist-button
+          data-id="{{ product.id }}"
+          data-title="{{ product.title | escape }}"
+          data-image="{{ product.featured_image | img_url: 'medium' }}"
+          data-price="{{ product.price | money }}"
+          data-url="{{ product.url }}"
+          data-add-label="{{ 'wishlist.add_to_wishlist' | t }}"
+          data-remove-label="{{ 'wishlist.remove_from_wishlist' | t }}"
+        >
+          {{ 'wishlist.add_to_wishlist' | t }}
+        </button>
       </div>
     </div>
   </div>
 </div>
-
-<!-- filepath: sections/product-*.liquid -->
-<script>
-window.dataLayer = window.dataLayer || [];
-window.dataLayer.push({
-  event: "view_item",
-  ecommerce: {
-    items: [{
-      item_id: "{{ product.selected_or_first_available_variant.id }}",
-      item_name: "{{ product.title | escape }}",
-      item_brand: "{{ product.vendor }}",
-      item_category: "{{ product.type }}",
-      price: {{ product.price | money_without_currency | replace: ',', '.' }},
-      currency: "{{ shop.currency }}"
-    }]
-  }
-});
-</script>
-
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-  const btn = document.querySelector('[name="add"], .btn.btn-primary');
-  if (!btn) return;
-
-  btn.addEventListener("click", function() {
-    window.dataLayer.push({
-      event: "add_to_cart",
-      ecommerce: {
-        items: [{
-          item_id: "{{ product.selected_or_first_available_variant.id }}",
-          item_name: "{{ product.title | escape }}",
-          price: {{ product.selected_or_first_available_variant.price | money_without_currency | replace: ',', '.' }},
-          quantity: 1
-        }]
-      }
-    });
-  });
-});
-</script>
 
 {% schema %}
 {

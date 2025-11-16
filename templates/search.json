@@ -47,5 +47,7 @@
       }
     }
   },
-  "order": ["template-search"]
+  "order": [
+    "template-search"
+  ]
 }
