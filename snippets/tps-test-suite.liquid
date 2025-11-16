@@ -1,0 +1,206 @@
+{%- comment -%}
+🧪 TPS Test Suite - Script de validation automatique
+Inclure uniquement en mode développement/preview
+Usage: {% render 'tps-test-suite' %}
+{%- endcomment -%}
+
+{%- liquid
+  assign is_dev_mode = false
+  if request.host contains 'preview' or request.host contains 'dev' or request.host contains 'localhost'
+    assign is_dev_mode = true
+  endif
+-%}
+
+{% if is_dev_mode %}
+<script>
+(function() {
+  'use strict';
+
+  // Configuration de test
+  const TEST_CONFIG = {
+    timeout: 3000,
+    debug: true,
+    auto_run: true
+  };
+
+  console.group('🧪 [TPS] Test Suite Starting');
+
+  // Test Suite Principal
+  class TPSTestSuite {
+    constructor() {
+      this.results = [];
+      this.passed = 0;
+      this.failed = 0;
+    }
+
+    test(name, testFn, expectedResult = true) {
+      try {
+        const result = testFn();
+        const success = result === expectedResult;
+
+        this.results.push({
+          name,
+          success,
+          result,
+          expected: expectedResult
+        });
+
+        if (success) {
+          this.passed++;
+          console.log(`✅ ${name}:`, result);
+        } else {
+          this.failed++;
+          console.error(`❌ ${name}:`, result, `(expected: ${expectedResult})`);
+        }
+      } catch (error) {
+        this.failed++;
+        this.results.push({
+          name,
+          success: false,
+          error: error.message
+        });
+        console.error(`💥 ${name}: ERROR -`, error.message);
+      }
+    }
+
+    async runAll() {
+      console.log('🏃‍♂️ Running TPS Tests...');
+
+      // Test 1: SDK Chargé
+      this.test('TPS SDK Loaded', () => typeof window.TPS !== 'undefined');
+
+      // Test 2: Fonction trackEvent disponible
+      this.test('TPS.trackEvent Available', () => typeof TPS.trackEvent === 'function');
+
+      // Test 3: Debug functions disponibles
+      this.test('TPS.debug Available', () => typeof TPS.debug === 'object');
+      this.test('TPS.debug.status Available', () => typeof TPS.debug.status === 'function');
+      this.test('TPS.debug.test Available', () => typeof TPS.debug.test === 'function');
+
+      // Test 4: Intégrations disponibles
+      this.test('Google Analytics (gtag) Available', () => typeof window.gtag === 'function');
+      this.test('Meta Pixel (fbq) Available', () => typeof window.fbq === 'function');
+      this.test('Sentry Available', () => typeof window.Sentry !== 'undefined');
+
+      // Test 5: Configuration métafields
+      const metaPixelId = "{{ shop.metafields.custom_integrations.Meta_Pixel_ID | escape }}";
+      const ga4Token = "{{ shop.metafields.custom_integrations.GA4_Token | escape }}";
+      const sentryDsn = "{{ shop.metafields.custom_integrations.Sentry_DSN | escape }}";
+
+      this.test('Meta Pixel ID Configured', () => metaPixelId && metaPixelId !== 'null' && metaPixelId !== '');
+      this.test('GA4 Token Configured', () => ga4Token && ga4Token !== 'null' && ga4Token !== '');
+      this.test('Sentry DSN Configured', () => sentryDsn && sentryDsn !== 'null' && sentryDsn !== '');
+
+      // Test 6: Test d'événement factice
+      if (typeof TPS !== 'undefined' && typeof TPS.trackEvent === 'function') {
+        this.test('TPS Event Tracking Test', () => {
+          try {
+            TPS.trackEvent('TPS_Test_Suite', {
+              test: true,
+              timestamp: Date.now(),
+              user_agent: navigator.userAgent.substring(0, 50)
+            });
+            return true;
+          } catch (e) {
+            throw new Error('Event tracking failed: ' + e.message);
+          }
+        });
+      }
+
+      // Résultats finaux
+      this.showResults();
+    }
+
+    showResults() {
+      console.groupEnd(); // Fermer le groupe initial
+
+      const total = this.passed + this.failed;
+      const percentage = total > 0 ? Math.round((this.passed / total) * 100) : 0;
+
+      console.group(`🏁 [TPS] Test Results: ${this.passed}/${total} (${percentage}%)`);
+
+      if (this.failed === 0) {
+        console.log('🎉 All tests passed! TPS is properly configured.');
+      } else {
+        console.warn(`⚠️ ${this.failed} test(s) failed. Check configuration.`);
+      }
+
+      // Afficher les détails des échecs
+      const failures = this.results.filter(r => !r.success);
+      if (failures.length > 0) {
+        console.group('❌ Failed Tests Details:');
+        failures.forEach(f => {
+          console.error(`• ${f.name}:`, f.error || `Got ${f.result}, expected ${f.expected}`);
+        });
+        console.groupEnd();
+      }
+
+      // Recommandations
+      if (this.failed > 0) {
+        console.group('💡 Recommendations:');
+
+        if (typeof TPS === 'undefined') {
+          console.log('• Check that tps-tracking.js is loaded in theme.liquid');
+        }
+
+        if (typeof gtag !== 'function') {
+          console.log('• Verify GA4 configuration in integrations.liquid');
+        }
+
+        if (typeof fbq !== 'function') {
+          console.log('• Verify Meta Pixel configuration in integrations.liquid');
+        }
+
+        const metaPixelId = "{{ shop.metafields.custom_integrations.Meta_Pixel_ID | escape }}";
+        if (!metaPixelId || metaPixelId === 'null') {
+          console.log('• Configure Meta_Pixel_ID metafield: custom_integrations.Meta_Pixel_ID = "1973238620087976"');
+        }
+
+        console.groupEnd();
+      }
+
+      console.groupEnd();
+
+      // Stocker les résultats pour référence
+      window.TPS_TEST_RESULTS = {
+        passed: this.passed,
+        failed: this.failed,
+        total: total,
+        percentage: percentage,
+        details: this.results,
+        timestamp: new Date().toISOString()
+      };
+    }
+  }
+
+  // Auto-run après un délai
+  if (TEST_CONFIG.auto_run) {
+    setTimeout(() => {
+      const suite = new TPSTestSuite();
+      suite.runAll();
+    }, TEST_CONFIG.timeout);
+  }
+
+  // Exposer globalement pour exécution manuelle
+  window.runTPSTests = function() {
+    const suite = new TPSTestSuite();
+    return suite.runAll();
+  };
+
+  console.log('🧪 TPS Test Suite loaded. Auto-run in', TEST_CONFIG.timeout + 'ms');
+  console.log('💻 Manual run: runTPSTests()');
+  console.groupEnd();
+
+})();
+</script>
+
+{%- comment -%} CSS pour améliorer l'affichage des logs {%- endcomment -%}
+<style>
+  /* Style pour messages de debug dans la console */
+  .tps-debug {
+    font-family: 'Monaco', 'Menlo', monospace;
+    font-size: 12px;
+  }
+</style>
+
+{% endif %}

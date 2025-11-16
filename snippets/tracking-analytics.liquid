@@ -1,0 +1,92 @@
+{% comment %}
+---------------------------------------------------------
+THE PET SOCIETY — Tracking Analytics Snippet
+Version : 1.0
+---------------------------------------------------------
+Ce snippet gère :
+ - le chargement du SDK universel (TPS Tracking)
+ - les balises data-* pour auto-tracking
+ - les exemples de tracking manuel (newsletter, recos, add-to-cart)
+---------------------------------------------------------
+{% endcomment %}
+
+{%- comment -%} ⚙️ Intégrations universelles (GA4, Meta, Sentry, CF) {%- endcomment -%}
+{%- liquid
+  assign integ = shop.metafields.custom_integrations
+
+  # Map metafields to expected names (handle case variations)
+  assign ga4_token = integ.GA4_Token | default: integ.ga4_token | strip
+  assign meta_pixel_id = integ.Meta_Pixel_ID | default: integ.meta_pixel_id | strip
+  assign sentry_dsn = integ.Sentry_DSN | default: integ.sentry_dsn | strip
+  assign cloudflare_token = integ.Cloudflare_Token | default: integ.cloudflare_beacon_token | strip
+
+  # Optional free analytics platforms
+  assign clarity_id = integ.Clarity_ID | default: integ.clarity_id | strip
+  assign hotjar_id = integ.Hotjar_ID | default: integ.hotjar_id | strip
+  assign amplitude_key = integ.Amplitude_Key | default: integ.amplitude_key | strip
+-%}
+
+<script id="tps-integrations" type="application/json">
+{
+  "ga4": "{{ ga4_token | escape }}",
+  "meta_pixel_id": "{{ meta_pixel_id | escape }}",
+  "sentry_dsn": "{{ sentry_dsn | escape }}",
+  "cloudflare_beacon_token": "{{ cloudflare_token | escape }}",
+  "clarity_id": "{{ clarity_id | escape }}",
+  "hotjar_id": "{{ hotjar_id | escape }}",
+  "amplitude_key": "{{ amplitude_key | escape }}"
+}
+</script>
+
+{%- comment -%} 📡 SDK principal {%- endcomment -%}
+<script src="{{ 'tps-tracking.js' | asset_url }}" defer></script>
+
+{%- comment -%}
+🧩 Exemples d’usage : ils déclenchent automatiquement des événements
+si le SDK TPS est chargé et si le thème contient les bons data-attributes.
+{%- endcomment -%}
+
+<!-- ========== 1️⃣ Formulaire Newsletter ========== -->
+<form data-newsletter data-location="footer" class="newsletter-form">
+  <input type="email" name="contact[email]" placeholder="Enter your email" required>
+  <button type="submit">{{ 'general.newsletter.submit' | t }}</button>
+</form>
+
+<!-- ========== 2️⃣ Recommandations Produits ========== -->
+{%- if recommendations.products.size > 0 -%}
+<div class="recommended-products">
+  {% for product in recommendations.products %}
+    <a
+      href="{{ product.url }}"
+      class="rec-item"
+      data-rec-product-id="{{ product.id }}"
+      data-rec-position="{{ forloop.index }}"
+      data-rec-source="homepage"
+    >
+      {{ product.title }}
+    </a>
+  {% endfor %}
+</div>
+{%- endif -%}
+
+<!-- ========== 3️⃣ Bouton Add to Cart spécifique ========== -->
+{%- if product -%}
+  <button
+    id="btn-add-hero"
+    class="btn btn-primary"
+    data-track-add
+    data-product-id="{{ product.selected_or_first_available_variant.id }}"
+    data-product-name="{{ product.title | escape }}"
+    data-price="{{ product.selected_or_first_available_variant.price | money_without_currency | replace: ',', '.' }}"
+    data-source="hero_button"
+  >
+    {{ 'products.product.add_to_cart' | t }}
+  </button>
+{%- endif -%}
+
+{%- comment -%}
+📘 DEBUG & TEST :
+Dans la console navigateur :
+  localStorage.setItem('TPS_DEBUG','1'); location.reload();
+  TPS.debug.test('Test Event', {foo:'bar'});
+{%- endcomment -%}

@@ -1,0 +1,474 @@
+{% comment %}
+  ---------------------------------------------------------
+  Copyright © 2019/2024 Theme Shopiweb Premium. Tous droits réservés.
+  ---------------------------------------------------------
+{% endcomment %}
+
+{% liquid
+  assign pt = section.settings.pt | prepend: 'pt-5 pt-sm-'
+  assign pb = section.settings.pb | prepend: 'pb-'
+%}
+
+{% style %}
+  .product-content-bg-gradient {
+      background: {{ section.settings.product_content_bg_gradient }};
+  }
+{% endstyle %}
+
+<script>
+  window.productVariants = {{ product.variants | json }}
+</script>
+
+<a class="visually-hidden-focusable" href="#product-content">
+  {{ 'general.accessibility.skip_product_content' | t }}
+</a>
+
+<section
+  id="product-template"
+  class="{{ pt }} {{ pb }}"
+  data-product-handle="{{ product.handle }}"
+>
+    
+    {%- comment -%} 🎨 SÉLECTEUR PRODUITS LIÉS PAR COULEUR {%- endcomment -%}
+    {% render 'product-color-variants' %}
+
+  <div class="container">
+    
+    {%- comment -%} 🎨 SÉLECTEUR PRODUITS LIÉS PAR COULEUR {%- endcomment -%}
+    {% render 'product-color-variants' %}
+
+    <div class="d-flex justify-content-between align-items-center my-4">
+      {% if section.settings.show_breadcrumbs and section.settings.breadcrumb_position == 'top' %}
+        <div class="breadcrumbs-wrapper">
+          {% render 'breadcrumbs' %}
+        </div>
+      {% endif %}
+      {% if section.settings.show_share_btn and section.settings.share_btn_position == 'top' %}
+        <div class="ms-auto">
+          {% render 'share-button', title: product.title, url: product.url %}
+        </div>
+      {% endif %}
+    </div>
+    <div class="row">
+      <div class="col-lg-6">
+        <div class="product-gallery-wrapper">
+          {% render 'product-gallery' %}
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div id="product-content" class="product-content">
+          <div class="{% if section.settings.product_content_show_bg_gradient %}product-content-bg-gradient rounded mx-n3 mx-lg-0 p-lg-5 p-3{% endif %}">
+            {% form 'product', product, onsubmit: 'handleAddToCartFormSubmit(this, event)' %}
+              <input
+                type="hidden"
+                name="id"
+                value="{{ product.selected_or_first_available_variant.id }}"
+              >
+
+              {%- for block in section.blocks -%}
+                {%- case block.type -%}
+                  {%- when '@app' -%}
+                    {% render block %}
+                  {%- when 'vendor' -%}
+                    {% render 'product-block-vendor', block: block %}
+                  {%- when 'title' -%}
+                    {% render 'product-block-title', block: block %}
+                  {%- when 'sku' -%}
+                    {% render 'product-block-sku', block: block %}
+                  {%- when 'subtitle' -%}
+                    {% render 'product-block-subtitle', block: block %}
+                  {%- when 'rating_shopitrust' -%}
+                    {% render 'product-block-rating-shopitrust', block: block %}
+                  {%- when 'rating_natif' -%}
+                    {% render 'product-block-rating-natif', block: block %}
+                  {%- when 'price' -%}
+                    {% render 'product-block-price', block: block, form: form %}
+                  {%- when 'pantone_color_selector' -%}
+                    {% render 'product-variant-color-selector', product: product, block: block %}
+                  {%- when 'variant_selector' -%}
+                    {% render 'product-block-variant-selector', block: block %}
+                  {%- when 'purchase_options' -%}
+                    {% render 'product-block-purchase-options', block: block %}
+                  {%- when 'inventory_bar' -%}
+                    {% render 'product-block-inventory-bar', block: block %}
+                  {%- when 'gift_card' -%}
+                    {% render 'product-block-gift-card', form: form %}
+                  {%- when 'buy_buttons' -%}
+                    {% render 'product-block-buy-buttons', block: block, form: form %}
+                  {%- when 'payment_icons' -%}
+                    {% render 'product-block-payment-icons', block: block %}
+                  {%- when 'animated_stories' -%}
+                    {% render 'product-block-animated-stories', block: block %}
+                  {%- when 'qty_breaks' -%}
+                    {% render 'product-block-qty-breaks', block: block %}
+                  {%- when 'text' -%}
+                    {% render 'product-block-text', block: block %}
+                  {%- when 'scrolling_text' -%}
+                    {% render 'product-block-scrolling-text', block: block %}
+                  {%- when 'limited_offer' -%}
+                    {% render 'product-block-limited-offer', block: block %}
+                  {%- when 'live_visitors' -%}
+                    {% render 'product-block-live-visitors', block: block %}
+                  {%- when 'estimated_delivery' -%}
+                    {% render 'product-block-estimated-delivery', block: block %}
+                  {%- when 'liquid_code' -%}
+                    {% render 'product-block-liquid-code', block: block %}
+                  {%- when 'separator' -%}
+                    {% render 'product-block-separator', block: block %}
+                  {%- when 'media' -%}
+                    {% render 'product-block-media', block: block %}
+                  {%- when 'delivery_info' -%}
+                    {% render 'product-block-delivery-info', block: block %}
+                  {%- when 'accordion' -%}
+                    {% render 'product-block-accordion', block: block %}
+                  {%- when 'personalization' -%}
+                    {% render 'product-block-personalization', block: block %}
+                  {%- when 'trust_badges' -%}
+                    {% render 'product-block-trust-badges', block: block %}
+                  {%- when 'testimonials' -%}
+                    {% render 'product-block-testimonials', block: block %}
+                  {%- when 'tabs' -%}
+                    {% render 'product-block-tabs', block: block %}
+                {%- endcase -%}
+              {%- endfor -%}
+            {% endform %}
+          </div>
+
+          {% liquid
+            render 'bought-product-together'
+          %}
+
+          <div class="d-flex justify-content-between align-items-center my-4">
+            {% if section.settings.show_breadcrumbs and section.settings.breadcrumb_position == 'bottom' %}
+              <div class="breadcrumbs-wrapper me-6">
+                {% render 'breadcrumbs' %}
+              </div>
+            {% endif %}
+            {% if section.settings.show_share_btn and section.settings.share_btn_position == 'bottom' %}
+              <div class="ms-auto">
+                {% render 'share-button', title: product.title, url: product.url %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% liquid
+  render 'product-prev-next'
+  render 'product-block-upsell-modal'
+  render 'product-block-size-chart'
+%}
+
+{%- liquid
+  if product.selected_or_first_available_variant.featured_media
+    assign seo_media = product.selected_or_first_available_variant.featured_media
+  else
+    assign seo_media = product.featured_media
+  endif
+-%}
+
+<!-- Structured data for SEO -->
+<script type="application/ld+json">
+  {
+      "@context": "http://schema.org/",
+      "@type": "Product",
+      "name": {{ product.title | json }},
+      "url": {{ request.origin | append: product.url | json }},
+      {% if seo_media -%}
+          "image": [
+              {{ seo_media | image_url: width: seo_media.preview_image.width | prepend: "https:" | json }}
+          ],
+      {%- endif %}
+      "description": {{ product.description | strip_html | json }},
+      {% if product.selected_or_first_available_variant.sku != blank -%}
+          "sku": {{ product.selected_or_first_available_variant.sku | json }},
+      {%- endif %}
+      "brand": {
+          "@type": "Brand",
+          "name": {{ product.vendor | json }}
+      },
+      "offers": [
+          {%- for variant in product.variants -%}
+              {
+              "@type" : "Offer",
+              {%- if variant.sku != blank -%}
+                  "sku": {{ variant.sku | json }},
+              {%- endif -%}
+              {%- if variant.barcode.size == 12 -%}
+                  "gtin12": {{ variant.barcode }},
+              {%- endif -%}
+              {%- if variant.barcode.size == 13 -%}
+                  "gtin13": {{ variant.barcode }},
+              {%- endif -%}
+              {%- if variant.barcode.size == 14 -%}
+                  "gtin14": {{ variant.barcode }},
+              {%- endif -%}
+              "availability" : "http://schema.org/{% if variant.available %}InStock{% else %}OutOfStock{% endif %}",
+              "price" : {{ variant.price | divided_by: 100.00 | json }},
+              "priceCurrency" : {{ cart.currency.iso_code | json }},
+              "url" : {{ request.origin | append: variant.url | json }}
+              }{% unless forloop.last %},{% endunless %}
+          {%- endfor -%}
+      ]
+  }
+</script>
+
+{% schema %}
+{
+  "name": "Product Template",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Layout Settings"
+    },
+    {
+      "type": "range",
+      "id": "pt",
+      "label": "Padding Top",
+      "min": 0,
+      "max": 10,
+      "step": 1,
+      "default": 5
+    },
+    {
+      "type": "range",
+      "id": "pb",
+      "label": "Padding Bottom",
+      "min": 0,
+      "max": 10,
+      "step": 1,
+      "default": 5
+    },
+    {
+      "type": "header",
+      "content": "Product Content"
+    },
+    {
+      "type": "checkbox",
+      "id": "product_content_show_bg_gradient",
+      "label": "Show background gradient",
+      "default": false
+    },
+    {
+      "type": "color_background",
+      "id": "product_content_bg_gradient",
+      "label": "Background gradient"
+    },
+    {
+      "type": "header",
+      "content": "Navigation"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_breadcrumbs",
+      "label": "Show breadcrumbs",
+      "default": true
+    },
+    {
+      "type": "select",
+      "id": "breadcrumb_position",
+      "label": "Breadcrumb position",
+      "options": [
+        { "value": "top", "label": "Top" },
+        { "value": "bottom", "label": "Bottom" }
+      ],
+      "default": "top"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_share_btn",
+      "label": "Show share button",
+      "default": true
+    },
+    {
+      "type": "select",
+      "id": "share_btn_position",
+      "label": "Share button position",
+      "options": [
+        { "value": "top", "label": "Top" },
+        { "value": "bottom", "label": "Bottom" }
+      ],
+      "default": "top"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "@app"
+    },
+    {
+      "type": "vendor",
+      "name": "🛍️ Vendor",
+      "limit": 1
+    },
+    {
+      "type": "title",
+      "name": "📝 Product Title",
+      "limit": 1
+    },
+    {
+      "type": "sku",
+      "name": "🔖 SKU",
+      "limit": 1
+    },
+    {
+      "type": "subtitle",
+      "name": "📜 Subtitle",
+      "limit": 1
+    },
+    {
+      "type": "rating_shopitrust",
+      "name": "⭐️ Rating Shopitrust",
+      "limit": 1
+    },
+    {
+      "type": "rating_natif",
+      "name": "⭐️ Rating Natif",
+      "limit": 1
+    },
+    {
+      "type": "price",
+      "name": "💰 Price",
+      "limit": 1
+    },
+    {
+      "type": "pantone_color_selector",
+      "name": "🎨 Pantone Color Selector",
+      "limit": 1,
+      "settings": [
+        {
+          "type": "paragraph",
+          "content": "Affiche un sélecteur de couleurs basé sur vos metaobjects Pantone Color. Configurez le metafield 'Product Color Variants' sur vos produits."
+        },
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Titre personnalisé",
+          "default": "Couleur",
+          "info": "Laissez vide pour utiliser le nom de l'option de variante"
+        },
+        {
+          "type": "header",
+          "content": "Espacement"
+        },
+        {
+          "type": "range",
+          "id": "mt",
+          "label": "Marge supérieure",
+          "min": 0,
+          "max": 5,
+          "step": 1,
+          "default": 3
+        },
+        {
+          "type": "range",
+          "id": "mb",
+          "label": "Marge inférieure",
+          "min": 0,
+          "max": 5,
+          "step": 1,
+          "default": 3
+        }
+      ]
+    },
+    {
+      "type": "variant_selector",
+      "name": "🎛️ Variant Selector",
+      "limit": 1
+    },
+    {
+      "type": "purchase_options",
+      "name": "💳 Purchase Options",
+      "limit": 1
+    },
+    {
+      "type": "inventory_bar",
+      "name": "📊 Inventory Bar",
+      "limit": 1
+    },
+    {
+      "type": "gift_card",
+      "name": "🎁 Gift Card",
+      "limit": 1
+    },
+    {
+      "type": "buy_buttons",
+      "name": "🛒 Buy Buttons",
+      "limit": 1
+    },
+    {
+      "type": "payment_icons",
+      "name": "💳 Payment Icons",
+      "limit": 1
+    },
+    {
+      "type": "animated_stories",
+      "name": "📱 Animated Stories",
+      "limit": 1
+    },
+    {
+      "type": "qty_breaks",
+      "name": "📦 Quantity Breaks",
+      "limit": 1
+    },
+    {
+      "type": "text",
+      "name": "📝 Text Block"
+    },
+    {
+      "type": "scrolling_text",
+      "name": "📜 Scrolling Text"
+    },
+    {
+      "type": "limited_offer",
+      "name": "⏰ Limited Offer"
+    },
+    {
+      "type": "live_visitors",
+      "name": "👥 Live Visitors"
+    },
+    {
+      "type": "estimated_delivery",
+      "name": "🚚 Estimated Delivery"
+    },
+    {
+      "type": "liquid_code",
+      "name": "💻 Liquid Code"
+    },
+    {
+      "type": "separator",
+      "name": "➖ Separator"
+    },
+    {
+      "type": "media",
+      "name": "🎬 Media"
+    },
+    {
+      "type": "delivery_info",
+      "name": "📦 Delivery Info"
+    },
+    {
+      "type": "accordion",
+      "name": "📋 Accordion"
+    },
+    {
+      "type": "personalization",
+      "name": "✨ Personalization"
+    },
+    {
+      "type": "trust_badges",
+      "name": "🛡️ Trust Badges"
+    },
+    {
+      "type": "testimonials",
+      "name": "💬 Testimonials"
+    },
+    {
+      "type": "tabs",
+      "name": "📑 Tabs"
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,205 @@
+{%- comment -%}
+TPS Tracking Examples - Copy-Paste Ready Code
+============================================
+
+This file contains ready-to-use tracking code examples for common scenarios.
+Copy the relevant section and paste it into your templates/sections.
+{%- endcomment -%}
+
+{%- comment -%} ===== EXEMPLE 1: BOUTON ADD TO CART SPÉCIFIQUE ===== {%- endcomment -%}
+{%- comment -%}
+Usage: Dans sections/template-product.liquid ou toute section avec un bouton spécial
+
+<button id="btn-add-hero" type="button" data-product-id="{{ product.selected_or_first_available_variant.id }}">
+  {{ 'products.product.add_to_cart' | t }}
+</button>
+
+<script>
+document.getElementById('btn-add-hero')?.addEventListener('click', function(){
+  if (!window.TPS || !TPS.trackEvent) return;
+
+  TPS.trackEvent('Add to Cart', {
+    product_id: '{{ product.selected_or_first_available_variant.id }}',
+    product_name: {{ product.title | json }},
+    price: {{ product.selected_or_first_available_variant.price | money_without_currency | replace: ',', '.' }},
+    variant_id: {{ product.selected_or_first_available_variant.id }},
+    source: 'hero_button',
+    page_type: 'product'
+  });
+});
+</script>
+{%- endcomment -%}
+
+
+{%- comment -%} ===== EXEMPLE 2: LECTURE D'ARTICLE BLOG ===== {%- endcomment -%}
+{%- comment -%}
+Usage: Dans templates/article.liquid
+
+<script>
+(function(){
+  let sent = false;
+  window.addEventListener('scroll', function(){
+    if(sent) return;
+    const p = (window.scrollY + window.innerHeight) / document.body.scrollHeight * 100;
+    if(p >= 75){
+      sent = true;
+      if (window.TPS && TPS.trackEvent) {
+        TPS.trackEvent('Blog Post Read', {
+          article_title: {{ article.title | json }},
+          article_author: {{ article.author | json }},
+          blog_handle: {{ blog.handle | json }},
+          read_percentage: 75,
+          time_on_page: Math.round((Date.now() - window.performance.timeOrigin) / 1000)
+        });
+      }
+    }
+  }, {passive:true});
+})();
+</script>
+{%- endcomment -%}
+
+
+{%- comment -%} ===== EXEMPLE 3: NEWSLETTER AVEC DATA-ATTRIBUTES ===== {%- endcomment -%}
+{%- comment -%}
+Usage: Dans sections avec newsletter (footer, popup, etc.)
+
+<form action="/contact#contact_form" method="post" data-newsletter data-location="footer">
+  <input type="email" name="contact[email]" placeholder="Email" required>
+  <input type="hidden" name="contact[tags]" value="newsletter">
+  <button type="submit">{{ 'general.newsletter_form.submit' | t }}</button>
+</form>
+
+Note: Le tracking est automatique via tps-tracking.js grâce aux data-attributes
+{%- endcomment -%}
+
+
+{%- comment -%} ===== EXEMPLE 4: BOUTON CHECKOUT SPÉCIFIQUE ===== {%- endcomment -%}
+{%- comment -%}
+Usage: Bouton checkout personnalisé
+
+<button type="button" data-checkout data-source="cart_drawer">
+  {{ 'sections.cart.checkout' | t }}
+</button>
+
+Note: Le tracking est automatique via tps-tracking.js grâce aux data-attributes
+{%- endcomment -%}
+
+
+{%- comment -%} ===== EXEMPLE 5: SEARCH FORM PERSONNALISÉ ===== {%- endcomment -%}
+{%- comment -%}
+Usage: Formulaire de recherche avec source tracking
+
+<form action="/search" method="get" data-source="mobile_menu">
+  <input type="text" name="q" placeholder="Search..." value="{{ search.terms }}">
+  <button type="submit">Search</button>
+</form>
+
+Note: Le tracking est automatique via tps-tracking.js
+{%- endcomment -%}
+
+
+{%- comment -%} ===== EXEMPLE 6: PROMO BANNER CLICK ===== {%- endcomment -%}
+{%- comment -%}
+Usage: Dans sections avec bannières promotionnelles
+
+<a href="/collections/sale"
+   class="promo-banner"
+   data-promo-name="Black Friday"
+   data-discount="20%">
+  <span>Black Friday Sale - 20% OFF!</span>
+</a>
+
+<script>
+document.querySelector('.promo-banner')?.addEventListener('click', function(e){
+  const el = e.currentTarget;
+  if (!window.TPS || !TPS.trackEvent) return;
+
+  TPS.trackEvent('Promo Banner Click', {
+    promo_name: el.dataset.promoName,
+    discount_amount: el.dataset.discount,
+    banner_location: 'header',
+    destination_url: el.href,
+    page_type: TPS.getPageType ? TPS.getPageType() : 'unknown'
+  });
+}, {passive: true});
+</script>
+{%- endcomment -%}
+
+
+{%- comment -%} ===== EXEMPLE 7: WISHLIST INTERACTIONS ===== {%- endcomment -%}
+{%- comment -%}
+Usage: Avec les boutons wishlist existants
+
+<button class="wishlist-btn"
+        data-product-id="{{ product.id }}"
+        data-action="add">
+  {{ 'products.product.add_to_wishlist' | t }}
+</button>
+
+<script>
+document.querySelector('.wishlist-btn')?.addEventListener('click', function(e){
+  const btn = e.currentTarget;
+  if (!window.TPS || !TPS.trackEvent) return;
+
+  const action = btn.dataset.action;
+
+  TPS.trackEvent('Wishlist Interaction', {
+    product_id: btn.dataset.productId,
+    action: action,
+    product_name: {{ product.title | json }},
+    source: TPS.getPageType ? TPS.getPageType() : 'unknown'
+  });
+}, {passive: true});
+</script>
+{%- endcomment -%}
+
+
+{%- comment -%} ===== EXEMPLE 8: COLLECTION PRODUCT CLICKS ===== {%- endcomment -%}
+{%- comment -%}
+Usage: Dans templates/collection.liquid ou sections de grilles produits
+
+<div class="product-grid">
+  {% for product in collection.products %}
+    <a href="{{ product.url }}"
+       class="product-card"
+       data-collection-product-id="{{ product.id }}"
+       data-collection-position="{{ forloop.index }}"
+       data-collection-handle="{{ collection.handle }}">
+      <!-- Contenu du produit -->
+    </a>
+  {% endfor %}
+</div>
+
+<script>
+document.addEventListener('click', function(e){
+  const card = e.target.closest('[data-collection-product-id]');
+  if (!card || !window.TPS || !TPS.trackEvent) return;
+
+  TPS.trackEvent('Collection Product Click', {
+    product_id: card.dataset.collectionProductId,
+    position: +card.dataset.collectionPosition || undefined,
+    collection_handle: card.dataset.collectionHandle,
+    collection_name: {{ collection.title | json }},
+    total_products: {{ collection.products.size }}
+  });
+}, {passive: true});
+</script>
+{%- endcomment -%}
+
+
+{%- comment -%} ===== DEBUG HELPER ===== {%- endcomment -%}
+{%- comment -%}
+Pour activer le debug dans la console du navigateur :
+
+localStorage.setItem('TPS_DEBUG', '1');
+location.reload();
+
+Pour désactiver :
+localStorage.removeItem('TPS_DEBUG');
+location.reload();
+
+Ou utiliser les fonctions helper (si debug activé) :
+TPS.debug.enable();  // Active et recharge
+TPS.debug.disable(); // Désactive et recharge
+TPS.debug.test('Test Event', {prop: 'value'}); // Test un event
+{%- endcomment -%}

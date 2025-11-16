@@ -1,0 +1,103 @@
+{%- comment -%}
+TPS Configuration Checker
+========================
+
+Ce snippet vérifie la configuration des intégrations et affiche
+des messages d'aide pour résoudre les problèmes courants.
+
+Usage: {% render 'tps-config-checker' %}
+{%- endcomment -%}
+
+<script>
+(function() {
+  'use strict';
+
+  // Configuration checker for TPS integrations
+  function checkTpsConfig() {
+    console.group('🔧 TPS Configuration Check');
+
+    // Check TPS SDK
+    if (typeof window.TPS === 'undefined') {
+      console.error('❌ TPS SDK not loaded');
+      console.log('💡 Solution: Add <script src="{{ tps-tracking.js | asset_url }}" defer></script> to theme.liquid');
+    } else {
+      console.log('✅ TPS SDK loaded');
+
+      // Check debug functions
+      if (typeof TPS.debug !== 'undefined') {
+        console.log('✅ Debug functions available');
+        console.log('   Use: TPS.debug.enable() / TPS.debug.disable() / TPS.debug.test()');
+      } else {
+        console.warn('⚠️ Debug functions not available');
+      }
+    }
+
+    // Check GA4
+    if (typeof window.gtag === 'function') {
+      console.log('✅ Google Analytics 4 (gtag) available');
+    } else {
+      console.warn('⚠️ GA4 not detected');
+      console.log('💡 Check metafield: shop.metafields.custom_integrations.GA4_Token');
+    }
+
+    // Check Meta Pixel
+    if (typeof window.fbq === 'function') {
+      console.log('✅ Meta Pixel (fbq) available');
+    } else {
+      console.warn('⚠️ Meta Pixel not detected');
+      console.log('💡 Check metafield: shop.metafields.custom_integrations.Meta_Pixel_ID');
+      console.log('   Expected value: 1973238620087976');
+    }
+
+    // Check Sentry
+    if (typeof window.Sentry !== 'undefined') {
+      console.log('✅ Sentry SDK loaded');
+    } else {
+      console.warn('⚠️ Sentry not detected');
+      console.log('💡 Check metafield: shop.metafields.custom_integrations.Sentry_DSN');
+    }
+
+    // Configuration values check
+    if (window.TPSConfig) {
+      console.log('📊 Current Configuration:');
+      console.table(window.TPSConfig);
+    } else {
+      console.warn('⚠️ TPS Configuration not found');
+    }
+
+    console.groupEnd();
+  }
+
+  // Auto-run check after page load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', checkTpsConfig);
+  } else {
+    setTimeout(checkTpsConfig, 1000); // Wait 1s for all scripts to load
+  }
+
+  // Expose checker function
+  window.checkTpsConfig = checkTpsConfig;
+
+})();
+</script>
+
+<style>
+/* Helper for configuration display */
+.tps-config-info {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  background: #f0f0f0;
+  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 5px;
+  font-family: monospace;
+  font-size: 12px;
+  z-index: 9999;
+  max-width: 300px;
+}
+
+.tps-config-info.hidden {
+  display: none;
+}
+</style>

@@ -1,0 +1,82 @@
+{% comment %}
+  Product Previous/Next Navigation
+  Displays navigation links to previous and next products in the same collection
+{% endcomment %}
+
+{%- liquid
+  if collection and collection.products.size > 1
+    assign current_product = product
+    assign current_index = nil
+    assign prev_product = nil
+    assign next_product = nil
+
+    for product_item in collection.products
+      if product_item.id == current_product.id
+        assign current_index = forloop.index0
+        break
+      endif
+    endfor
+
+    if current_index != nil
+      assign prev_index = current_index | minus: 1
+      assign next_index = current_index | plus: 1
+
+      if prev_index >= 0
+        assign prev_product = collection.products[prev_index]
+      endif
+
+      if next_index < collection.products.size
+        assign next_product = collection.products[next_index]
+      endif
+    endif
+  endif
+-%}
+
+{% if prev_product or next_product %}
+  <div class="product-navigation py-4">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-6">
+          {% if prev_product %}
+            <a href="{{ prev_product.url }}" class="product-nav-link product-nav-prev d-flex align-items-center text-decoration-none">
+              <svg class="me-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15,18 9,12 15,6"></polyline>
+              </svg>
+              <div>
+                <small class="text-muted d-block">Previous</small>
+                <span class="fw-medium">{{ prev_product.title | truncate: 40 }}</span>
+              </div>
+            </a>
+          {% endif %}
+        </div>
+        <div class="col-6 text-end">
+          {% if next_product %}
+            <a href="{{ next_product.url }}" class="product-nav-link product-nav-next d-flex align-items-center justify-content-end text-decoration-none">
+              <div class="text-end">
+                <small class="text-muted d-block">Next</small>
+                <span class="fw-medium">{{ next_product.title | truncate: 40 }}</span>
+              </div>
+              <svg class="ms-2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9,18 15,12 9,6"></polyline>
+              </svg>
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .product-navigation {
+      border-top: 1px solid var(--bs-border-color, #dee2e6);
+    }
+    .product-nav-link {
+      color: inherit;
+      transition: opacity 0.2s ease;
+    }
+    .product-nav-link:hover {
+      opacity: 0.7;
+      color: inherit;
+    }
+  </style>
+{% endif %}

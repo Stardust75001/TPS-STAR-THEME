@@ -1,0 +1,19 @@
+<!-- TPS-STAR Quick Debug -->
+<script>
+// Simple TPS debug helper (does not overwrite existing TPS.debug.enable)
+window.TPS = window.TPS || {};
+window.TPS.debug = window.TPS.debug || {};
+window.TPS.debug.enable = window.TPS.debug.enable || function() {
+  console.group('🔍 TPS-STAR Debug Info (Simple)');
+  console.log('✅ TPS object available');
+  console.log('🎯 Trackers status:');
+  try { console.log('  - Clarity:', typeof clarity === 'function' ? '✅ Active' : '❌ Inactive'); } catch(e) { console.log('  - Clarity: ❌ Inactive (error)'); }
+  try { console.log('  - Hotjar:', typeof hj === 'function' ? '✅ Active' : '❌ Inactive'); } catch(e) { console.log('  - Hotjar: ❌ Inactive (error)'); }
+  try { console.log('  - GA4:', typeof gtag === 'function' ? '✅ Active' : '❌ Inactive'); } catch(e) { console.log('  - GA4: ❌ Inactive (error)'); }
+  try { console.log('  - Meta:', typeof fbq === 'function' ? '✅ Active' : '❌ Inactive'); } catch(e) { console.log('  - Meta: ❌ Inactive (error)'); }
+  console.groupEnd();
+};
+
+// Ready message
+console.log('🚀 TPS-STAR Simple Debug Ready - Use TPS.debug.enable()');
+</script>

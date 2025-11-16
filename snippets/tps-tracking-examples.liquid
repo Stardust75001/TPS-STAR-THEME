@@ -1,0 +1,270 @@
+{%- comment -%}
+TPS Event Tracking Examples
+===========================
+
+Ce fichier contient des exemples d'utilisation pour les événements TPS
+que vous pouvez copier-coller dans vos sections selon vos besoins.
+
+USAGE :
+1. Copiez l'exemple approprié
+2. Collez-le dans votre section
+3. Adaptez les sélecteurs et données selon votre HTML
+{%- endcomment -%}
+
+{%- comment -%} ===== EXEMPLE 1: BOUTON ADD TO CART SPÉCIFIQUE ===== {%- endcomment -%}
+{%- comment -%}
+À utiliser dans sections/product-form.liquid ou toute section avec un bouton spécial :
+
+<button id="btn-add-hero" class="btn btn-primary" data-product-id="{{ product.selected_or_first_available_variant.id }}">
+  {{ 'products.product.add_to_cart' | t }}
+</button>
+
+<script>
+  document.getElementById('btn-add-hero')?.addEventListener('click', function(e){
+    const button = e.currentTarget;
+    TPS.trackEvent('Add to Cart', {
+      product_id: '{{ product.selected_or_first_available_variant.id }}',
+      product_name: {{ product.title | json }},
+      price: {{ product.selected_or_first_available_variant.price | divided_by: 100.0 }},
+      category: {{ product.type | json }},
+      variant_id: {{ product.selected_or_first_available_variant.id }},
+      source: 'hero_button',
+      button_location: 'product_page_top'
+    });
+  });
+</script>
+{%- endcomment -%}
+
+
+{%- comment -%} ===== EXEMPLE 2: RECOMMANDATIONS PRODUITS ===== {%- endcomment -%}
+{%- comment -%}
+À utiliser dans sections/recommended-products.liquid ou sections/featured-products.liquid :
+
+{% for product in recommendations.products %}
+  <a href="{{ product.url }}"
+     class="product-recommendation"
+     data-rec-source="product_page"
+     data-product-id="{{ product.id }}"
+     data-position="{{ forloop.index }}"
+     data-product-title="{{ product.title }}">
+    <img src="{{ product.featured_image | img_url: '300x300' }}" alt="{{ product.title }}">
+    <h3 data-product-title>{{ product.title }}</h3>
+    <span class="price">{{ product.price | money }}</span>
+  </a>
+
+  <script>
+    document.currentScript.previousElementSibling?.addEventListener('click', function(e){
+      const el = e.currentTarget;
+      TPS.trackEvent('Product Recommended Click', {
+        recommended_from: el.dataset.recSource,
+        product_id: el.dataset.productId,
+        position: parseInt(el.dataset.position || '0', 10),
+        product_name: el.dataset.productTitle,
+        source_page: '{{ template.name }}',
+        recommendation_type: 'related_products'
+      });
+    });
+  </script>
+{% endfor %}
+{%- endcomment -%}
+
+
+{%- comment -%} ===== EXEMPLE 3: ARTICLE BLOG LECTURE ===== {%- endcomment -%}
+{%- comment -%}
+À utiliser dans templates/article.liquid :
+
+<script>
+  (function(){
+    let sent = false;
+    const startTime = Date.now();
+
+    window.addEventListener('scroll', function(){
+      if (sent) return;
+      const scrollPercent = (window.scrollY + window.innerHeight) / document.body.scrollHeight * 100;
+
+      if (scrollPercent >= 75) {
+        sent = true;
+        TPS.trackEvent('Blog Post Read', {
+          article_title: {{ article.title | json }},
+          article_author: {{ article.author | json }},
+          blog_handle: {{ blog.handle | json }},
+          read_percentage: 75,
+          time_on_page: Math.round((Date.now() - startTime) / 1000),
+          article_tags: {{ article.tags | json }},
+          word_count: document.querySelector('.article-content')?.textContent.split(' ').length || 0
+        });
+      }
+    }, {passive: true});
+  })();
+</script>
+{%- endcomment -%}
+
+
+{%- comment -%} ===== EXEMPLE 4: COLLECTION PAGE PRODUCT CLICKS ===== {%- endcomment -%}
+{%- comment -%}
+À utiliser dans sections qui affichent des grilles de produits :
+
+{% for product in collection.products %}
+  <a href="{{ product.url }}"
+     class="product-card"
+     data-product-id="{{ product.id }}"
+     data-position="{{ forloop.index }}"
+     data-collection="{{ collection.handle }}">
+    <!-- Contenu du produit -->
+  </a>
+
+  <script>
+    document.currentScript.previousElementSibling?.addEventListener('click', function(e){
+      const el = e.currentTarget;
+      TPS.trackEvent('Product Collection Click', {
+        product_id: el.dataset.productId,
+        collection_handle: el.dataset.collection,
+        position: parseInt(el.dataset.position || '0', 10),
+        collection_name: {{ collection.title | json }},
+        total_products: {{ collection.products.size }},
+        page_type: 'collection'
+      });
+    });
+  </script>
+{% endfor %}
+{%- endcomment -%}
+
+
+{%- comment -%} ===== EXEMPLE 5: NEWSLETTER AVEC SOURCE ===== {%- endcomment -%}
+{%- comment -%}
+À utiliser dans sections avec newsletter (footer, popup, etc.) :
+
+<form action="/contact#contact_form" method="post" class="newsletter-form" data-source="footer">
+  <input type="email" name="contact[email]" placeholder="Email">
+  <input type="hidden" name="contact[tags]" value="newsletter">
+  <button type="submit">Subscribe</button>
+</form>
+
+<script>
+  document.querySelector('.newsletter-form[data-source="footer"]')?.addEventListener('submit', function(e){
+    const form = e.currentTarget;
+    const email = form.querySelector('input[name="contact[email]"]')?.value;
+
+    TPS.trackEvent('Newsletter Signup', {
+      email: email || undefined,
+      location: form.dataset.source || 'unknown',
+      page_type: '{{ template.name }}',
+      page_url: window.location.pathname
+    });
+  });
+</script>
+{%- endcomment -%}
+
+
+{%- comment -%} ===== EXEMPLE 6: SEARCH AVEC RÉSULTATS ===== {%- endcomment -%}
+{%- comment -%}
+À utiliser dans sections de recherche :
+
+<form action="/search" method="get" class="search-form">
+  <input type="text" name="q" placeholder="Search products..." value="{{ search.terms }}">
+  <button type="submit">Search</button>
+</form>
+
+<script>
+  document.querySelector('.search-form')?.addEventListener('submit', function(e){
+    const form = e.currentTarget;
+    const query = form.querySelector('input[name="q"]')?.value;
+
+    TPS.trackEvent('Search', {
+      query: query || '',
+      source: 'header_search',
+      page_type: '{{ template.name }}',
+      {% if search.results_count %}
+      results_count: {{ search.results_count }},
+      {% endif %}
+    });
+  });
+</script>
+{%- endcomment -%}
+
+
+{%- comment -%} ===== EXEMPLE 7: PROMO BANNER CLICK ===== {%- endcomment -%}
+{%- comment -%}
+À utiliser dans sections avec bannières promotionnelles :
+
+<a href="/collections/sale"
+   class="promo-banner"
+   data-promo-name="Black Friday"
+   data-discount="20%">
+  <span>Black Friday Sale - 20% OFF!</span>
+</a>
+
+<script>
+  document.querySelector('.promo-banner')?.addEventListener('click', function(e){
+    const el = e.currentTarget;
+    TPS.trackEvent('Promo Banner Click', {
+      promo_name: el.dataset.promoName,
+      discount_amount: el.dataset.discount,
+      banner_location: 'header',
+      destination_url: el.href
+    });
+  });
+</script>
+{%- endcomment -%}
+
+
+{%- comment -%} ===== EXEMPLE 8: WISHLIST INTERACTIONS ===== {%- endcomment -%}
+{%- comment -%}
+À utiliser avec les boutons wishlist :
+
+<button class="wishlist-btn"
+        data-product-id="{{ product.id }}"
+        data-action="add">
+  Add to Wishlist
+</button>
+
+<script>
+  document.querySelector('.wishlist-btn')?.addEventListener('click', function(e){
+    const btn = e.currentTarget;
+    const action = btn.dataset.action; // 'add' ou 'remove'
+
+    TPS.trackEvent('Wishlist Interaction', {
+      product_id: btn.dataset.productId,
+      action: action,
+      product_name: {{ product.title | json }},
+      source: 'product_page'
+    });
+  });
+</script>
+{%- endcomment -%}
+
+
+{%- comment -%} ===== CONFIGURATION DEBUG ===== {%- endcomment -%}
+{%- comment -%}
+Pour activer le debug en développement, ajoutez dans votre console :
+localStorage.setItem('TPS_DEBUG', '1');
+
+Pour désactiver :
+localStorage.removeItem('TPS_DEBUG');
+
+Cela affichera tous les événements TPS dans la console du navigateur.
+{%- endcomment -%}
+
+
+{%- comment -%} ===== BONNES PRATIQUES ===== {%- endcomment -%}
+{%- comment -%}
+1. NOMS D'ÉVÉNEMENTS :
+   - Utilisez la syntaxe "Verb Noun" : "Add to Cart", "View Product"
+   - Soyez consistant avec la casse
+   - Évitez les caractères spéciaux
+
+2. PROPRIÉTÉS :
+   - Utilisez snake_case ou camelCase de façon consistante
+   - product_id, product_name, etc.
+   - Incluez toujours les données essentielles (id, name, price)
+
+3. PERFORMANCE :
+   - Utilisez les event listeners sur des éléments stables
+   - Évitez les listeners dans les boucles sans script séparé
+   - Préférez event delegation pour les éléments dynamiques
+
+4. DONNÉES :
+   - Utilisez les filtres Liquid appropriés (| json pour les strings)
+   - Divisez les prix par 100 pour avoir la valeur décimale
+   - Incluez les informations de contexte (page_type, source, etc.)
+{%- endcomment -%}

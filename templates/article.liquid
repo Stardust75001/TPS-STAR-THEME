@@ -1,0 +1,81 @@
+{% comment %}
+  TPS-STAR Article Template
+  =========================
+  Template for blog article pages with automatic reading tracking.
+{% endcomment %}
+
+<article class="article" itemscope itemtype="http://schema.org/BlogPosting">
+  <header class="article__header">
+    <h1 class="article__title" itemprop="headline">{{ article.title }}</h1>
+
+    <div class="article__meta">
+      {% if article.author != blank %}
+        <span class="article__author" itemprop="author">{{ article.author }}</span>
+      {% endif %}
+
+      <time class="article__date" datetime="{{ article.published_at | date: '%Y-%m-%d' }}" itemprop="datePublished">
+        {{ article.published_at | date: '%B %d, %Y' }}
+      </time>
+
+      {% if article.tags.size > 0 %}
+        <div class="article__tags">
+          {% for tag in article.tags %}
+            <span class="article__tag">{{ tag }}</span>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  </header>
+
+  <div class="article__content rte" itemprop="articleBody">
+    {{ article.content }}
+  </div>
+
+  {% if article.tags.size > 0 %}
+    <footer class="article__footer">
+      <div class="article__tags">
+        <strong>Tags:</strong>
+        {% for tag in article.tags %}
+          <a href="{{ blog.url }}/tagged/{{ tag | handle }}" class="article__tag-link">{{ tag }}</a>
+        {% endfor %}
+      </div>
+    </footer>
+  {% endif %}
+</article>
+
+{%- comment -%} Navigation between articles {%- endcomment -%}
+{% if blog.previous_article or blog.next_article %}
+  <nav class="article__navigation">
+    {% if blog.previous_article %}
+      <a href="{{ blog.previous_article.url }}" class="article__nav-link article__nav-link--prev">
+        ← {{ blog.previous_article.title }}
+      </a>
+    {% endif %}
+
+    {% if blog.next_article %}
+      <a href="{{ blog.next_article.url }}" class="article__nav-link article__nav-link--next">
+        {{ blog.next_article.title }} →
+      </a>
+    {% endif %}
+  </nav>
+{% endif %}
+
+{%- comment -%} TPS Blog Post Reading Tracking {%- endcomment -%}
+<script>
+(function(){
+  let sent=false;
+  window.addEventListener('scroll', function(){
+    if(sent) return;
+    const p = (window.scrollY + window.innerHeight) / document.body.scrollHeight * 100;
+    if(p >= 75){
+      sent = true;
+      if (window.TPS && TPS.trackEvent) {
+        TPS.trackEvent('Blog Post Read', {
+          article_title: {{ article.title | json }},
+          read_percentage: 75
+        });
+      }
+    }
+  }, {passive:true});
+})();
+</script>

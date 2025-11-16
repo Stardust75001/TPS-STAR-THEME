@@ -1,0 +1,74 @@
+{%- comment -%}
+TPS Recommended Products Snippet
+================================
+
+Usage:
+{% render 'recommended-products',
+   products: recommendations.products,
+   source: 'product_page',
+   title: 'You might also like' %}
+
+Automatic event tracking included via data-attributes.
+{%- endcomment -%}
+
+{% liquid
+  assign products = products | default: recommendations.products
+  assign source = source | default: 'recommendations'
+  assign title = title | default: 'Recommended for you'
+  assign limit = limit | default: 4
+%}
+
+{% if products.size > 0 %}
+<div class="recommended-products">
+  {% unless title == blank %}
+    <h3 class="recommended-products__title">{{ title }}</h3>
+  {% endunless %}
+
+  <div class="recommended-products__grid">
+    {% for product in products limit: limit %}
+      <a href="{{ product.url }}"
+         class="product-recommendation"
+         data-rec-product-id="{{ product.id }}"
+         data-rec-position="{{ forloop.index }}"
+         data-rec-source="{{ source }}">
+
+        <div class="product-recommendation__image">
+          {% if product.featured_image %}
+            <img src="{{ product.featured_image | image_url: width: 300 }}"
+                 alt="{{ product.featured_image.alt | escape }}"
+                 loading="lazy">
+          {% endif %}
+        </div>
+
+        <div class="product-recommendation__content">
+          <h4 class="product-recommendation__title">{{ product.title }}</h4>
+          <div class="product-recommendation__price">
+            {% if product.compare_at_price > product.price %}
+              <span class="price price--sale">{{ product.price | money }}</span>
+              <span class="price price--compare">{{ product.compare_at_price | money }}</span>
+            {% else %}
+              <span class="price">{{ product.price | money }}</span>
+            {% endif %}
+          </div>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+</div>
+
+{%- comment -%} Auto-tracking for product recommendation clicks {%- endcomment -%}
+<script>
+document.addEventListener('click', function(e){
+  const a = e.target.closest('[data-rec-product-id]');
+  if(!a || !window.TPS || !TPS.trackEvent) return;
+
+  TPS.trackEvent('Product Recommendation Click', {
+    product_id: a.getAttribute('data-rec-product-id'),
+    position: +a.getAttribute('data-rec-position') || undefined,
+    recommended_from: a.getAttribute('data-rec-source') || 'recommendations',
+    product_name: a.querySelector('.product-recommendation__title')?.textContent?.trim(),
+    source_page: TPS.getPageType ? TPS.getPageType() : 'unknown'
+  });
+}, {passive:true});
+</script>
+{% endif %}

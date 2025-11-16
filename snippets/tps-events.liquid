@@ -1,0 +1,177 @@
+{%- comment -%} TPS — Global events wiring {%- endcomment -%}
+<script>
+(function () {
+  // Garde-fous
+  window.TPS = window.TPS || {};
+  TPS.trackEvent = TPS.trackEvent || function(name, props){
+    try {
+      // si gtag dispo
+      if (window.gtag) gtag('event', name, props || {});
+      // si Meta Pixel dispo
+      if (window.fbq)  fbq('trackCustom', name, props || {});
+      // console utile en dev
+      if (window.console && localStorage.getItem('TPS_DEBUG')) {
+        console.log('[TPS.trackEvent]', name, props || {});
+      }
+    } catch(e) { /* no-op */ }
+  };
+
+  // ---------- ADD TO CART (form + fetch /cart/add.js) ----------
+  // 1) hook sur <product-form> moderne (si évènement custom présent)
+  document.addEventListener('product:added', function(e){
+    var d = e.detail || {};
+    TPS.trackEvent('Add to Cart', {
+      product_id:   d.id || d.variant_id,
+      product_name: d.title,
+      price:        d.price ? d.price/100 : undefined,
+      quantity:     d.quantity || 1
+    });
+  });
+
+  // 2) fallback: espionner les requêtes fetch /cart/add.js
+  const _fetch = window.fetch;
+  window.fetch = function(input, init){
+    const url = typeof input === 'string' ? input : (input && input.url);
+    const isAdd = url && url.indexOf('/cart/add') > -1;
+    return _fetch(input, init).then(async (res) => {
+      if (isAdd && res.ok) {
+        try {
+          const data = await res.clone().json();
+          const line = (data.items && data.items[0]) || data;
+          TPS.trackEvent('Add to Cart', {
+            product_id:   line.variant_id || line.id,
+            product_name: line.title,
+            price:        line.final_line_price ? line.final_line_price/100 : undefined,
+            quantity:     line.quantity || 1
+          });
+        } catch(e){}
+      }
+      return res;
+    });
+  };
+
+  // ---------- SEARCH ----------
+  const searchForms = document.querySelectorAll('form[action*="/search"]');
+  searchForms.forEach(function(f){
+    f.addEventListener('submit', function(){
+      const q = (new FormData(f).get('q') || '').toString();
+      TPS.trackEvent('Search', { query: q });
+    });
+  });
+
+  // ---------- NEWSLETTER SIGNUP ----------
+  document.addEventListener('submit', function(e){
+    const f = e.target;
+    if (!f || !f.matches('form[action*="/contact"], form[action*="/newsletter"]')) return;
+    const email = (new FormData(f).get('contact[email]') || new FormData(f).get('email') || '').toString();
+    TPS.trackEvent('Newsletter Signup', { email: email || undefined, location: 'footer' });
+  }, true);
+
+  // ---------- BEGIN CHECKOUT (bouton panier → checkout) ----------
+  document.addEventListener('click', function(e){
+    const a = e.target.closest('a,button');
+    if (!a) return;
+    const href = a.getAttribute('href') || '';
+    if (href.startsWith('/checkout') || a.name === 'checkout') {
+      TPS.trackEvent('Begin Checkout', {});
+    }
+  });
+
+  // ---------- SCROLL TRACKING (pour blog posts) ----------
+  // Hook automatique pour les pages d'article
+  if (window.location.pathname.includes('/blogs/')) {
+    let readTracked = false;
+    window.addEventListener('scroll', function(){
+      if (readTracked) return;
+      const scrollPercent = (window.scrollY + window.innerHeight) / document.body.scrollHeight * 100;
+      if (scrollPercent >= 75) {
+        readTracked = true;
+        const articleTitle = document.querySelector('h1')?.textContent || 'Unknown Article';
+        TPS.trackEvent('Blog Post Read', {
+          article_title: articleTitle.trim(),
+          read_percentage: 75
+        });
+      }
+    }, {passive: true});
+  }
+
+  // ---------- PRODUCT VIEW (pages produit) ----------
+  if (window.location.pathname.includes('/products/')) {
+    // Déclenché automatiquement au chargement de la page produit
+    document.addEventListener('DOMContentLoaded', function(){
+      const productData = window.product || {};
+      if (productData.id) {
+        TPS.trackEvent('Product View', {
+          product_id: productData.id,
+          product_name: productData.title,
+          product_type: productData.type,
+          price: productData.price ? productData.price / 100 : undefined,
+          vendor: productData.vendor
+        });
+      }
+    });
+  }
+
+  // ---------- EXEMPLES POUR USAGE LOCAL ----------
+  // Ces fonctions peuvent être appelées directement dans vos sections :
+
+  // Exemple 1: Bouton "Add to Cart" spécifique avec ID
+  // <button id="btn-add-hero" ...>Add</button>
+  // <script>
+  //   document.getElementById('btn-add-hero')?.addEventListener('click', function(){
+  //     TPS.trackEvent('Add to Cart', {
+  //       product_id: '{{ product.selected_or_first_available_variant.id }}',
+  //       product_name: {{ product.title | json }},
+  //       price: {{ product.selected_or_first_available_variant.price | divided_by: 100.0 }},
+  //       category: {{ product.type | json }},
+  //       source: 'hero_button'
+  //     });
+  //   });
+  // </script>
+
+  // Exemple 2: Recommandations produits avec tracking de position
+  // <a href="{{ product.url }}"
+  //    class="rec-card"
+  //    data-rec-source="product_page"
+  //    data-product-id="{{ product.id }}"
+  //    data-position="{{ forloop.index }}">
+  //    ...
+  // </a>
+  // <script>
+  //   document.currentScript.previousElementSibling
+  //     ?.addEventListener('click', function(e){
+  //       const el = e.currentTarget;
+  //       TPS.trackEvent('Product Recommended Click', {
+  //         recommended_from: el.dataset.recSource,
+  //         product_id: el.dataset.productId,
+  //         position: parseInt(el.dataset.position || '0', 10),
+  //         product_name: el.querySelector('[data-product-title]')?.textContent
+  //       });
+  //     });
+  // </script>
+
+  // Exemple 3: Lecture d'article blog (pour usage dans templates/article.liquid)
+  // <script>
+  //   (function(){
+  //     let sent = false;
+  //     window.addEventListener('scroll', function(){
+  //       if (sent) return;
+  //       const p = (window.scrollY + window.innerHeight) / document.body.scrollHeight * 100;
+  //       if (p >= 75) {
+  //         sent = true;
+  //         TPS.trackEvent('Blog Post Read', {
+  //           article_title: {{ article.title | json }},
+  //           article_author: {{ article.author | json }},
+  //           read_percentage: 75,
+  //           time_on_page: Math.round((Date.now() - window.TPS_PAGE_START) / 1000)
+  //         });
+  //       }
+  //     }, {passive: true});
+  //   })();
+  // </script>
+
+  // Marquer le début de page pour calcul du temps
+  window.TPS_PAGE_START = Date.now();
+
+})();
+</script>
